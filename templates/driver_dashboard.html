@@ -1,0 +1,9 @@
+<h2>Driver Dashboard</h2>
+<p>Your application status: <strong>{{ status }}</strong></p>
+{% if status == "pending" %}
+    <p>Your application is under review.</p>
+{% elif status == "approved" %}
+    <p>Congratulations! You are now an approved driver.</p>
+{% else %}
+    <p>Your application was rejected. Please contact support.</p>
+{% endif %}

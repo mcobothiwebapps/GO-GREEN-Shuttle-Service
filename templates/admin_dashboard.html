@@ -1,0 +1,30 @@
+<h2>Driver Applications</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>License Number</th>
+            <th>Vehicle Type</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for driver in drivers %}
+        <tr>
+            <td>{{ driver.email }}</td>
+            <td>{{ driver.license_number }}</td>
+            <td>{{ driver.vehicle_type }}</td>
+            <td>{{ driver.status }}</td>
+            <td>
+                {% if driver.status == "pending" %}
+                <a href="{{ url_for('approve_driver', driver_id=driver.id) }}" class="btn btn-success">Approve</a>
+                <a href="{{ url_for('reject_driver', driver_id=driver.id) }}" class="btn btn-danger">Reject</a>
+                {% else %}
+                {{ driver.status }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
