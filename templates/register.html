@@ -33,10 +33,36 @@
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
                                 <input type="password" class="form-control" name="password" minlength="6" required>
-
                             </div>
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Register as</label>
+                                <select class="form-control" name="role" required onchange="toggleDriverFields(this.value)">
+                                    <option value="customer">Customer</option>
+                                    <option value="driver">Driver</option>
+                                </select>
+                            </div>
+                        
+                            <!-- Driver-specific fields -->
+                            <div id="driverFields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="license_number" class="form-label">License Number</label>
+                                    <input type="text" class="form-control" name="license_number">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                                    <input type="text" class="form-control" name="vehicle_type">
+                                </div>
+                            </div>
+                        
                             <button type="submit" class="btn btn-success w-100">Register</button>
                         </form>
+                        
+                        <script>
+                            function toggleDriverFields(role) {
+                                document.getElementById('driverFields').style.display = role === 'driver' ? 'block' : 'none';
+                            }
+                        </script>
+                        
                     </div>
                     <div class="card-footer text-center">
                         <small>Already have an account? <a href="{{ url_for('login') }}">Login</a></small>
