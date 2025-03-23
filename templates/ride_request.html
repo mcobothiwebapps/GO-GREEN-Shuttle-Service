@@ -1,4 +1,3 @@
-<!-- AIzaSyB5KS9-omozJBVxqaNLCh6tkEH5D-ozEMg -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,7 @@
     <title>Go-Green Shuttle - Request a Ride</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB5KS9-omozJBVxqaNLCh6tkEH5D-ozEMg&libraries=places,directions"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAYgA0WDcNBnR7ewQIWEqUbNmDUdnHCL9M" async defer></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -28,26 +27,42 @@
             font-size: 24px;
             font-weight: bold;
         }
-        .nav-links {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-        }
-        .nav-links li {
-            display: inline;
-        }
-        .nav-links a {
-            text-decoration: none;
-            color: white;
+        .ride-info {
+            margin: 15px auto;
+            width: 80%;
+            max-width: 500px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
             font-weight: 600;
-            transition: 0.3s;
+            text-align: center;
+            display: none;
         }
-        .nav-links a:hover {
-            color: #CFF5D2;
+        .blinking-distance {
+            color: #2E8B57;
+            font-size: 22px;
+            font-weight: bold;
+            animation: blinkGreen 1s infinite alternate;
+        }
+        .blinking-time {
+            color: #FF5733;
+            font-size: 22px;
+            font-weight: bold;
+            animation: blinkRed 1s infinite alternate;
+        }
+        @keyframes blinkGreen {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        @keyframes blinkRed {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
         }
         main {
             text-align: center;
-            padding: 50px;
+            padding: 5px;
         }
         .ride-form {
             max-width: 500px;
@@ -81,9 +96,8 @@
             text-align: center;
             padding: 15px;
             color: white;
-            position: absolute;
+            position: relative;
             width: 100%;
-            bottom: 0;
         }
     </style>
 </head>
@@ -91,12 +105,6 @@
     <header>
         <nav class="navbar">
             <div class="logo">Go-Green Shuttle</div>
-            <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <li><a href="{{ url_for('ride_request') }}">Request a Ride</a></li>
-            </ul>
         </nav>
     </header>
     
@@ -112,9 +120,16 @@
                 
                 <button type="submit">Request Ride</button>
             </form>
-            <div id="map"></div>
-            <p>Click on the map to select locations.</p>
         </div>
+
+        <!-- Distance & Time Display (Centered Below Button) -->
+        <div class="ride-info" id="rideInfo">
+            <strong>Distance:</strong> <span id="distance" class="blinking-distance">0 km</span> <br>
+            <strong>Estimated Time:</strong> <span id="duration" class="blinking-time">0 mins</span>
+        </div>
+        </div>
+
+        <div id="map"></div>
     </main>
     
     <footer>
@@ -122,99 +137,49 @@
     </footer>
     
     <script>
-        let map, directionsService, directionsRenderer;
-        let pickupAutocomplete, destinationAutocomplete;
-        let pickupMarker, destinationMarker;
+        let map, directionsService, directionsRenderer, geocoder;
         let pickupLocation = null;
         let destinationLocation = null;
-        let geocoder;
-
+        let carMarker;
+        
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: -29.7378, lng: 30.9294 },
                 zoom: 12
             });
 
+            geocoder = new google.maps.Geocoder();
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
-            geocoder = new google.maps.Geocoder();
 
-            // ✅ Enable Google Autocomplete for Typing Locations
-            pickupAutocomplete = new google.maps.places.Autocomplete(document.getElementById('pickup'));
-            destinationAutocomplete = new google.maps.places.Autocomplete(document.getElementById('destination'));
+            let pickupInput = document.getElementById('pickup');
+            let destinationInput = document.getElementById('destination');
+
+            let pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput);
+            let destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput);
 
             pickupAutocomplete.addListener('place_changed', () => {
                 let place = pickupAutocomplete.getPlace();
-                if (!place.geometry) {
-                    alert("No location found.");
-                    return;
-                }
-                setPickupLocation(place.geometry.location, place.formatted_address);
+                if (!place.geometry) return alert("No location found for pickup.");
+                pickupLocation = place.geometry.location;
+                map.setCenter(pickupLocation);
             });
 
             destinationAutocomplete.addListener('place_changed', () => {
                 let place = destinationAutocomplete.getPlace();
-                if (!place.geometry) {
-                    alert("No location found.");
-                    return;
-                }
-                setDestinationLocation(place.geometry.location, place.formatted_address);
+                if (!place.geometry) return alert("No location found for destination.");
+                destinationLocation = place.geometry.location;
+                map.setCenter(destinationLocation);
             });
 
-            // ✅ Allow Clicking on the Map to Select Locations
-            map.addListener('click', (event) => {
-                if (!pickupLocation) {
-                    getAddressFromLatLng(event.latLng, setPickupLocation);
-                } else if (!destinationLocation) {
-                    getAddressFromLatLng(event.latLng, setDestinationLocation);
-                }
-            });
-
-            // ✅ Handle Route Calculation on Submit
             document.getElementById('rideRequestForm').addEventListener('submit', function(event) {
                 event.preventDefault();
                 if (!pickupLocation || !destinationLocation) {
-                    alert("Please select both a pickup and destination location.");
+                    alert("Please select both pickup and destination.");
                     return;
                 }
                 calculateRoute();
-            });
-        }
-
-        function setPickupLocation(location, address) {
-            if (pickupMarker) pickupMarker.setMap(null);
-            pickupMarker = new google.maps.Marker({
-                position: location,
-                map: map,
-                title: "Pickup Location"
-            });
-            pickupLocation = location;
-            document.getElementById('pickup').value = address || (location.lat() + ", " + location.lng());
-            map.setCenter(location);
-            map.setZoom(14);
-        }
-
-        function setDestinationLocation(location, address) {
-            if (destinationMarker) destinationMarker.setMap(null);
-            destinationMarker = new google.maps.Marker({
-                position: location,
-                map: map,
-                title: "Destination"
-            });
-            destinationLocation = location;
-            document.getElementById('destination').value = address || (location.lat() + ", " + location.lng());
-            map.setCenter(location);
-            map.setZoom(14);
-        }
-
-        function getAddressFromLatLng(latLng, callback) {
-            geocoder.geocode({ location: latLng }, (results, status) => {
-                if (status === "OK" && results[0]) {
-                    callback(latLng, results[0].formatted_address);
-                } else {
-                    callback(latLng, latLng.lat() + ", " + latLng.lng());
-                }
             });
         }
 
@@ -224,13 +189,49 @@
                 destination: destinationLocation,
                 travelMode: 'DRIVING'
             };
+
             directionsService.route(request, function(result, status) {
                 if (status === 'OK') {
                     directionsRenderer.setDirections(result);
+                    let route = result.routes[0].legs[0];
+
+                    document.getElementById('distance').innerText = route.distance.text;
+                    document.getElementById('duration').innerText = route.duration.text;
+                    document.getElementById('rideInfo').style.display = "block";
+
+                    startCarAnimation(route);
                 } else {
                     alert("🚫 Route not found! Try adjusting your locations.");
                 }
             });
+        }
+
+        function startCarAnimation(route) {
+            if (carMarker) carMarker.setMap(null);
+
+            let path = route.steps.map(step => step.start_location);
+            path.push(route.steps[route.steps.length - 1].end_location);
+
+            let index = 0;
+            carMarker = new google.maps.Marker({
+                position: path[index],
+                map: map,
+                icon: {
+                    url: "https://img.icons8.com/emoji/48/taxi-emoji.png",
+                    scaledSize: new google.maps.Size(40, 40)
+                }
+            });
+
+            function moveCar() {
+                if (index < path.length - 1) {
+                    index++;
+                    carMarker.setPosition(path[index]);
+                    map.setCenter(path[index]);
+                    setTimeout(moveCar, 4000);
+                }
+            }
+
+            moveCar();
         }
 
         window.onload = initMap;
