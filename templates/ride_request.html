@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go-Green Shuttle - Request a Ride</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAYgA0WDcNBnR7ewQIWEqUbNmDUdnHCL9M" async defer></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2E8B57;
+            padding: 15px 30px;
+            color: white;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .ride-info {
+            margin: 15px auto;
+            width: 80%;
+            max-width: 500px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+        .blinking-distance {
+            color: #2E8B57;
+            font-size: 22px;
+            font-weight: bold;
+            animation: blinkGreen 1s infinite alternate;
+        }
+        .blinking-time {
+            color: #FF5733;
+            font-size: 22px;
+            font-weight: bold;
+            animation: blinkRed 1s infinite alternate;
+        }
+        @keyframes blinkGreen {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        @keyframes blinkRed {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        main {
+            text-align: center;
+            padding: 5px;
+        }
+        .ride-form {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #2E8B57;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+        footer {
+            background-color: #2E8B57;
+            text-align: center;
+            padding: 15px;
+            color: white;
+            position: relative;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">Go-Green Shuttle</div>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="ride-form">
+            <h2>Request a Ride</h2>
+            <form id="rideRequestForm">
+                <label for="pickup">Pickup Location</label>
+                <input type="text" id="pickup" placeholder="Enter pickup location">
+                
+                <label for="destination">Destination</label>
+                <input type="text" id="destination" placeholder="Enter destination">
+                
+                <button type="submit">Request Ride</button>
+            </form>
+        </div>
+
+        <!-- Distance & Time Display (Centered Below Button) -->
+        <div class="ride-info" id="rideInfo">
+            <strong>Distance:</strong> <span id="distance" class="blinking-distance">0 km</span> <br>
+            <strong>Estimated Time:</strong> <span id="duration" class="blinking-time">0 mins</span>
+        </div>
+        </div>
+
+        <div id="map"></div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Go-Green Shuttle. All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        let map, directionsService, directionsRenderer, geocoder;
+        let pickupLocation = null;
+        let destinationLocation = null;
+        let carMarker;
+        
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -29.7378, lng: 30.9294 },
+                zoom: 12
+            });
+
+            geocoder = new google.maps.Geocoder();
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            let pickupInput = document.getElementById('pickup');
+            let destinationInput = document.getElementById('destination');
+
+            let pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput);
+            let destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput);
+
+            pickupAutocomplete.addListener('place_changed', () => {
+                let place = pickupAutocomplete.getPlace();
+                if (!place.geometry) return alert("No location found for pickup.");
+                pickupLocation = place.geometry.location;
+                map.setCenter(pickupLocation);
+            });
+
+            destinationAutocomplete.addListener('place_changed', () => {
+                let place = destinationAutocomplete.getPlace();
+                if (!place.geometry) return alert("No location found for destination.");
+                destinationLocation = place.geometry.location;
+                map.setCenter(destinationLocation);
+            });
+
+            document.getElementById('rideRequestForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                if (!pickupLocation || !destinationLocation) {
+                    alert("Please select both pickup and destination.");
+                    return;
+                }
+                calculateRoute();
+            });
+        }
+
+        function calculateRoute() {
+            let request = {
+                origin: pickupLocation,
+                destination: destinationLocation,
+                travelMode: 'DRIVING'
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    let route = result.routes[0].legs[0];
+
+                    document.getElementById('distance').innerText = route.distance.text;
+                    document.getElementById('duration').innerText = route.duration.text;
+                    document.getElementById('rideInfo').style.display = "block";
+
+                    startCarAnimation(route);
+                } else {
+                    alert("🚫 Route not found! Try adjusting your locations.");
+                }
+            });
+        }
+
+        function startCarAnimation(route) {
+            if (carMarker) carMarker.setMap(null);
+
+            let path = route.steps.map(step => step.start_location);
+            path.push(route.steps[route.steps.length - 1].end_location);
+
+            let index = 0;
+            carMarker = new google.maps.Marker({
+                position: path[index],
+                map: map,
+                icon: {
+                    url: "https://img.icons8.com/emoji/48/taxi-emoji.png",
+                    scaledSize: new google.maps.Size(40, 40)
+                }
+            });
+
+            function moveCar() {
+                if (index < path.length - 1) {
+                    index++;
+                    carMarker.setPosition(path[index]);
+                    map.setCenter(path[index]);
+                    setTimeout(moveCar, 4000);
+                }
+            }
+
+            moveCar();
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
