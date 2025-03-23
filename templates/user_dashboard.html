@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f9f9f9; }
+        .container { margin-top: 50px; }
+        .profile-box, .rides-box, .driver-box { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        input[readonly] { background-color: #e9ecef; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="mb-4">Welcome, {{ user['username'] }}</h2>
+
+    <!-- Profile Information -->
+    <div class="profile-box">
+        <h4>Profile Details</h4>
+        <div class="mb-3">
+            <label>Name</label>
+            <input type="text" class="form-control" value="{{ user['username'] }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="text" class="form-control" value="{{ user['email'] }}" readonly>
+        </div>
+    </div>
+
+    <!-- Ride History -->
+    <div class="rides-box">
+        <h4>Ride History</h4>
+        {% if rides %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Pickup</th>
+                    <th>Destination</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ride in rides %}
+                <tr>
+                    <td>{{ ride['date'] }}</td>
+                    <td>{{ ride['pickup'] }}</td>
+                    <td>{{ ride['destination'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No rides yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Driver Request Form -->
+    <div class="driver-box">
+        <h4>Become a Driver</h4>
+
+        {% if driver_request %}
+            <p>Status: 
+                <span class="badge bg-{{ 'secondary' if driver_request['status'].lower() == 'pending' else 'success' if driver_request['status'].lower() == 'approved' else 'danger' }}">
+                    {{ driver_request['status'].capitalize() }}
+                </span>
+            </p>
+
+            {% if driver_request['status'].lower() == 'declined' %}
+            <form method="POST" action="{{ url_for('resubmit_driver_request') }}">
+                <div class="mb-3">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" value="{{ user['username'] }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" value="{{ user['email'] }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label>License Number</label>
+                    <input type="text" class="form-control" name="license" required>
+                </div>
+                <div class="mb-3">
+                    <label>Vehicle Type</label>
+                    <input type="text" class="form-control" name="vehicle" required>
+                </div>
+                <button type="submit" class="btn btn-warning">Resubmit Request</button>
+            </form>
+            {% endif %}
+
+        {% else %}
+            <form method="POST" action="{{ url_for('submit_driver_request') }}">
+                <div class="mb-3">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" value="{{ user['username'] }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" value="{{ user['email'] }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label>License Number</label>
+                    <input type="text" class="form-control" name="license" required>
+                </div>
+                <div class="mb-3">
+                    <label>Vehicle Type</label>
+                    <input type="text" class="form-control" name="vehicle" required>
+                </div>
+                <button type="submit" class="btn btn-success">Submit Driver Request</button>
+            </form>
+        {% endif %}
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

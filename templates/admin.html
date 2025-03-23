@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
+
         .sidebar {
             width: 250px;
             height: 100vh;
@@ -18,29 +20,39 @@
             position: fixed;
             color: white;
         }
+
         .sidebar a {
             color: white;
             padding: 15px;
             display: block;
             text-decoration: none;
         }
+
         .sidebar a:hover {
             background: #1D5C3F;
         }
+
         .content {
             margin-left: 260px;
             padding: 20px;
         }
+
         .card {
             border-radius: 10px;
         }
+
+        table {
+            margin-top: 15px;
+        }
     </style>
 </head>
+
 <body>
     <div class="sidebar">
         <h2 class="text-center">Admin Panel</h2>
         <a href="#dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
-        <a href="#users"><i class="fas fa-users"></i> Users</a>
+        <a href="#users"><i class="fas fa-users"></i> Customers</a>
+        <a href="{{ url_for('pending_requests') }}">Driver Requests</a>
         <a href="#drivers"><i class="fas fa-car"></i> Drivers</a>
         <a href="#rides"><i class="fas fa-map-marker-alt"></i> Rides</a>
         <a href="#payments"><i class="fas fa-credit-card"></i> Payments</a>
@@ -62,12 +74,16 @@
                     <h2>89</h2>
                 </div>
             </div>
+
+
             <div class="col-md-3">
                 <div class="card p-3 shadow-sm">
-                    <h5>Pending Requests</h5>
-                    <h2>25</h2>
+                    <h5><a href="{{ url_for('pending_requests') }}" class="text-decoration-none fw-bold">
+                        Pending Requests</a></h5>
+                    <h2>{{ pending_requests | length }}</h2>
                 </div>
             </div>
+            
             <div class="col-md-3">
                 <div class="card p-3 shadow-sm">
                     <h5>Total Earnings</h5>
@@ -75,7 +91,8 @@
                 </div>
             </div>
         </div>
-        <h3 class="mt-4">User Management</h3>
+
+        <h3 id="users" class="mt-5">Customers</h3>
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -86,29 +103,60 @@
                 </tr>
             </thead>
             <tbody>
+                {% for customer in customers %}
                 <tr>
-                    <td>John Doe</td>
-                    <td>johndoe@example.com</td>
-                    <td>15</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger">Block</button>
-                    </td>
+                    <td>{{ customer['username'] }}</td>
+                    <td>{{ customer['email'] }}</td>
+                    <td>—</td>
+                    <td><button class="btn btn-sm btn-danger">Block</button></td>
                 </tr>
+                {% else %}
                 <tr>
-                    <td>Jane Smith</td>
-                    <td>janesmith@example.com</td>
-                    <td>22</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger">Block</button>
-                    </td>
+                    <td colspan="4" class="text-center text-muted">No customers found.</td>
                 </tr>
+                {% endfor %}
+                
+            </tbody>
+        </table>
+
+
+        <h3 id="drivers" class="mt-5">Drivers</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>License Number</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for driver in drivers %}
+                <tr>
+                    <td>{{ driver['username'] }}</td>
+                    <td>{{ driver['email'] }}</td>
+                    <td>{{ driver['license'] }}</td>
+                    <td>
+                        <span class="badge 
+            {% if driver['status'] == 'Approved' %} bg-success 
+            {% elif driver['status'] == 'Pending' %} bg-warning 
+            {% else %} bg-secondary {% endif %}">
+                            {{ driver['status'] }}
+                        </span>
+                    </td>
+                    <td><button class="btn btn-sm btn-danger">Block</button></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No drivers found.</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
-
-
-

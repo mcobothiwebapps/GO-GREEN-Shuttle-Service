@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Pending Driver Requests</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>License</th>
+                <th>Vehicle</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in pending %}
+            <tr>
+                <td>{{ req['username'] }}</td>
+                <td>{{ req['email'] }}</td>
+                <td>{{ req['license'] }}</td>
+                <td>{{ req['vehicle'] }}</td>
+                <td>{{ req['status'] }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('update_driver_status', request_id=req['id']) }}">
+                        <select name="status" class="form-select form-select-sm d-inline w-auto">
+                            <option value="Approved">Approve</option>
+                            <option value="Declined">Decline</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted">No pending requests.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

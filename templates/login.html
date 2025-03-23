@@ -7,16 +7,11 @@
     <h1>Login</h1>
     
     <!-- Define a form -->
-    <form action="" method="post">
-        <!-- Define a label and input field for the username -->
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username"><br><br>
-        
-        <!-- Define a label and input field for the password -->
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password"><br><br>
-        
-        <!-- Define a submit button -->
-        <input type="submit" value="Login">
+    <form method="POST">
+        <label>Email:</label>
+        <input type="email" name="email" required><br>
+        <label>Password:</label>
+        <input type="password" name="password" required><br>
+        <button type="submit">Login</button>
     </form>
 {% endblock %}
